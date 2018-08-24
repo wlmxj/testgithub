@@ -1,0 +1,64 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 28
+
+
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0-rc01'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+/**②.发布到私有服务器maven仓库*/
+apply plugin: 'maven'
+
+//打包main目录下代码和资源的 task
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+//配置需要上传到maven仓库的文件
+artifacts {
+    archives androidSourcesJar
+}
+//上传到Maven仓库的taskcom.test.wl:java-package:1.0.0
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId = 'com.test.wl'
+            pom.artifactId = 'java-package'
+            //最后必须是-SNAPSHOT
+            pom.version = IS_PUBLISH.toBoolean() ? VERSION : VERSION + '-SNAPSHOT'
+
+            //传到本地目录
+            //repository(url: uri('../tplugins'))
+            //传到本地maven私服
+            repository(url: IS_PUBLISH.toBoolean() ? 'http://localhost:8081/nexus/content/repositories/releases/' : 'http://localhost:8081/nexus/content/repositories/snapshots/') {
+                authentication(userName: 'admin', password: 'admin123')
+            }
+        }
+    }
+}
